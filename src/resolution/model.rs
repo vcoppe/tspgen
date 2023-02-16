@@ -60,12 +60,13 @@ impl Problem for TspModel {
             .unwrap_or(0)
     }
 
-    fn next_variable(&self, next_layer: &mut dyn Iterator<Item = &Self::State>)
-        -> Option<ddo::Variable> {
-        next_layer.next()
-            .map(|s| s.depth)
-            .filter(|d| *d < self.nb_variables())
-            .map(Variable)
+    fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>)
+        -> Option<Variable> {
+        if depth < self.nb_variables() {
+            Some(Variable(depth))
+        } else {
+            None
+        }
     }
 
     fn for_each_in_domain(&self, var: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {

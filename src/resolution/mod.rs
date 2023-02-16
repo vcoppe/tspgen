@@ -3,7 +3,7 @@
 use std::{fs::File, io::BufReader, time::Duration};
 
 use clap::Args;
-use ddo::{ParallelSolver, FixedWidth, TimeBudget, SimpleFrontier, MaxUB, Solver, Completion};
+use ddo::{FixedWidth, TimeBudget, MaxUB, Solver, Completion, NoDupFringe, ParBarrierSolverFc};
 
 use self::model::{TspModel, TspRelax, TspRanking};
 
@@ -38,9 +38,9 @@ impl Solve {
         let width = FixedWidth(self.width);
         let cutoff = TimeBudget::new(Duration::from_secs(self.timeout));
         let ranking = TspRanking;
-        let mut fringe = SimpleFrontier::new(MaxUB::new(&ranking));
+        let mut fringe = NoDupFringe::new(MaxUB::new(&ranking));
 
-        let mut solver = ParallelSolver::new(&problem, &relaxation, &ranking, &width, &cutoff, &mut fringe);
+        let mut solver = ParBarrierSolverFc::new(&problem, &relaxation, &ranking, &width, &cutoff, &mut fringe);
 
         let Completion{best_value, is_exact} = solver.maximize();
 
