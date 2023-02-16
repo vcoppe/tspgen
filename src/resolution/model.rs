@@ -1,14 +1,14 @@
-use ddo::{Problem, Variable, Decision, Relaxation, StateRanking};
+use ddo::{Problem, Variable, Decision, Relaxation, StateRanking, CompressedSolutionBound};
 use smallbitset::Set64;
 
 use crate::instance::Instance;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct TspState {
-    depth:       usize,
-    current:     Set64,
-    must_visit:  Set64,
-    might_visit: Set64,
+    pub depth:       usize,
+    pub current:     Set64,
+    pub must_visit:  Set64,
+    pub might_visit: Set64,
 }
 
 #[derive(Debug, Clone)]
@@ -83,9 +83,17 @@ impl Problem for TspModel {
     }
 }
 
-pub struct TspRelax;
+pub struct TspRelax<'a> {
+    compression_bound: Option<CompressedSolutionBound<'a, TspState>>
+}
 
-impl Relaxation for TspRelax {
+impl<'a> TspRelax<'a> {
+    pub fn new(compression_bound: Option<CompressedSolutionBound<'a, TspState>>) -> Self {
+        Self { compression_bound }
+    }
+}
+
+impl<'a> Relaxation for TspRelax<'a> {
     type State = TspState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
@@ -119,6 +127,14 @@ impl Relaxation for TspRelax {
         cost: isize,
     ) -> isize {
         cost
+    }
+
+    fn fast_upper_bound(&self, state: &Self::State) -> isize {
+        if let Some(bound) = &self.compression_bound {
+            bound.get_ub(state)
+        } else {
+            isize::MAX
+        }
     }
 }
 
